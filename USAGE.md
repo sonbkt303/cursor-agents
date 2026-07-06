@@ -1,0 +1,441 @@
+# Hướng dẫn sử dụng cursor-agents
+
+Tài liệu này hướng dẫn cách **phối hợp 6 subagent** trong Cursor để xử lý yêu cầu IT có chất lượng, có kiểm soát rủi ro, và có thể truy vết.
+
+> **Chưa cài đặt?** Xem [README.md](./README.md) để clone repo, chạy `setup.sh` / `setup.ps1`, và symlink `~/.cursor/agents` → `agents/`. Sau khi setup, các agent áp dụng cho **mọi project** trên máy đó.
+
+---
+
+## Tổng quan
+
+```
+Bạn (entry point)
+    │
+    ▼
+orchestrator ──► delegate ──► requirement-analyzer | architecture-agent | writer-agent
+    │                              │
+    │                              ▼
+    │                    adversarial-critic (challenge)
+    │                              │
+    │                              ▼
+    │                    producer self-revise (Adversarial Self-Revision)
+    │                              │
+    │                              ▼
+    │                    review-agent (PASS / PASS_WITH_NOTES / FAIL)
+    │
+    └──► deliver artifacts + Pipeline Status
+```
+
+**Nguyên tắc vàng:** `orchestrator` là điểm vào cho pipeline nhiều bước. Các agent chuyên môn làm việc sâu; `orchestrator` điều phối, không thay thế họ.
+
+---
+
+## Vai trò từng agent
+
+| Agent | Vai trò | Không làm |
+|-------|---------|-----------|
+| `orchestrator` | Điều phối pipeline, entry point | Chuyên sâu từng lĩnh vực; không tự implement code |
+| `requirement-analyzer` | Brief mơ hồ → Requirements Spec + Acceptance Criteria | Chọn tech stack; viết code |
+| `architecture-agent` | Thiết kế kỹ thuật từ spec đã duyệt | Thay đổi scope; viết full code |
+| `adversarial-critic` | Devil's advocate, câu hỏi Socratic | Sửa artifact; chấm PASS/FAIL |
+| `review-agent` | Review chính thức: PASS / PASS_WITH_NOTES / FAIL | Thiết kế lại; hỏi Socratic mở |
+| `writer-agent` | ADR, guide, runbook, PR summary | Thay đổi quyết định kỹ thuật |
+
+### Input / Output (hợp đồng giữa các agent)
+
+| Agent | Input | Output |
+|-------|-------|--------|
+| `requirement-analyzer` | Brief mơ hồ, ticket, ý tưởng feature | Requirements Spec |
+| `architecture-agent` | Requirements Spec đã duyệt | Architecture Decision |
+| `adversarial-critic` | Artifact từ producer | Adversarial Challenge Report |
+| `review-agent` | Artifact sau self-revision | Review Report |
+| `writer-agent` | Spec, design, hoặc ghi chú implementation | Tài liệu (ADR, guide, runbook, PR body) |
+
+---
+
+## Pipeline (định nghĩa trong orchestrator)
+
+Chọn pipeline phù hợp **trước khi** bắt đầu. Nếu không chắc, gọi `orchestrator` và mô tả mục tiêu — nó sẽ phân loại hoặc hỏi lại.
+
+### 1. FullFeature
+
+Luồng đầy đủ cho feature mới hoặc refactor lớn:
+
+```
+requirement-analyzer → adversarial-critic → self-revise → review-agent
+→ architecture-agent → adversarial-critic → self-revise → review-agent
+→ [implementation bởi main agent hoặc bạn]
+→ review-agent (code, nếu có)
+→ writer-agent → adversarial-critic → self-revise → review-agent
+→ deliver
+```
+
+### 2. RequirementsOnly
+
+Chỉ cần spec chuẩn hóa, không cần thiết kế hay code:
+
+```
+requirement-analyzer → adversarial-critic → self-revise → review-agent → deliver
+```
+
+### 3. ArchitectureOnly
+
+Đã có Requirements Spec; cần thiết kế kỹ thuật:
+
+```
+architecture-agent → adversarial-critic → self-revise → review-agent → deliver
+```
+
+> **Bắt buộc:** Phải cung cấp Requirements Spec làm input.
+
+### 4. CodeReviewOnly
+
+Review diff/PR trước merge — bỏ qua REQ/ARCH/ADV trừ khi bạn yêu cầu:
+
+```
+review-agent trên diff/artifact → deliver
+```
+
+### 5. DocsOnly
+
+Tài liệu là deliverable chính:
+
+```
+writer-agent → adversarial-critic → self-revise → review-agent → deliver
+```
+
+### Sơ đồ pipeline FullFeature
+
+```mermaid
+flowchart TD
+    A[Bạn gọi orchestrator] --> B[requirement-analyzer]
+    B --> C[adversarial-critic]
+    C --> D[self-revise REQ]
+    D --> E{review-agent REQ}
+    E -->|FAIL| B
+    E -->|PASS| F[architecture-agent]
+    F --> G[adversarial-critic]
+    G --> H[self-revise ARCH]
+    H --> I{review-agent ARCH}
+    I -->|FAIL| F
+    I -->|PASS| J[Implementation]
+    J --> K{review-agent code}
+    K --> L[writer-agent]
+    L --> M[adversarial-critic]
+    M --> N[self-revise DOC]
+    N --> O{review-agent DOC}
+    O --> P[Deliver]
+```
+
+---
+
+## Vòng lặp cốt lõi (mỗi phase producer)
+
+Mỗi lần `requirement-analyzer`, `architecture-agent`, hoặc `writer-agent` tạo artifact, `orchestrator` chạy **cùng một vòng lặp**:
+
+| Bước | Hành động |
+|------|-----------|
+| 1 | Delegate cho producer agent (kèm full context) |
+| 2 | Delegate cho `adversarial-critic` với **toàn bộ artifact** |
+| 3 | Producer hoàn thành bảng `## Adversarial Self-Revision` |
+| 4 | **Gate:** Mọi câu hỏi BLOCKING đã trả lời, hoặc ACCEPTED_RISK được **bạn** duyệt |
+| 5 | Delegate cho `review-agent` |
+| 6 | PASS hoặc PASS_WITH_NOTES → tiếp tục; FAIL → retry (tối đa 2 lần/agent/phase) |
+
+```
+Producer → adversarial-critic → Self-Revision → [Gate BLOCKING] → review-agent → [Gate verdict]
+```
+
+> **Quan trọng:** Không gọi `review-agent` trước khi producer hoàn thành Adversarial Self-Revision (trừ short-circuit đã ghi nhận).
+
+---
+
+## Quality gates
+
+| Tình huống | Hành vi |
+|------------|---------|
+| Còn câu hỏi **BLOCKING** chưa giải quyết | Pipeline **tạm dừng** — `orchestrator` hỏi bạn |
+| **ACCEPTED_RISK** trong self-revision | Cần **bạn duyệt rõ ràng** trước khi tiếp tục |
+| `review-agent` trả **FAIL** | Retry producer với Re-review Criteria (tối đa **2 lần**/agent/phase) |
+| Hết 2 lần retry | Escalate lên bạn: tóm tắt, lựa chọn, khuyến nghị |
+
+### Gate sau từng phase (orchestrator kiểm tra)
+
+| Sau phase | Điều kiện pass |
+|-----------|----------------|
+| requirement-analyzer + self-revision | AC testable; không BLOCKING mở; Open Questions có giới hạn |
+| architecture-agent + self-revision | Traceability đầy đủ; trade-offs ghi rõ; không BLOCKING mở |
+| review-agent | Verdict PASS hoặc PASS_WITH_NOTES |
+| writer-agent + self-revision | Doc đủ cho audience; không BLOCKING mở |
+
+---
+
+## Short-circuit (bỏ qua pipeline đầy đủ)
+
+Dùng khi task **đủ nhỏ** hoặc bạn **chủ động** rút gọn:
+
+| Điều kiện | Ví dụ |
+|-----------|-------|
+| Task trivial | Sửa typo, rename, one-liner, giải thích một function |
+| Bạn nói rõ `"skip adversarial"` | Ghi vào Pipeline Status |
+| Chỉ cần review code | `CodeReviewOnly` |
+| Chỉ cần tài liệu | `DocsOnly` |
+
+Khi short-circuit, `orchestrator` phải nêu **phase nào bị bỏ** và **lý do**.
+
+---
+
+## Pipeline Status (orchestrator emit mỗi response)
+
+Mỗi lần `orchestrator` trả lời trong pipeline, bạn sẽ thấy block sau — dùng để theo dõi tiến độ:
+
+```markdown
+## Pipeline Status
+- Pipeline: FullFeature | RequirementsOnly | ArchitectureOnly | CodeReviewOnly | DocsOnly
+- Current phase:
+- Last agent:
+- Adversarial round: N/2
+- Open BLOCKING questions: <count or list>
+- Review verdict: PASS | PASS_WITH_NOTES | FAIL | N/A
+- Next action:
+- Blockers:
+- Skipped phases (if any):
+```
+
+| Trường | Ý nghĩa |
+|--------|---------|
+| **Pipeline** | Pipeline đang chạy |
+| **Current phase** | Bước hiện tại (vd. Requirements challenge, Architecture review) |
+| **Last agent** | Agent vừa chạy xong |
+| **Adversarial round** | Số vòng adversarial (retry tối đa 2/phase) |
+| **Open BLOCKING questions** | Câu hỏi chặn pipeline — phải = 0 hoặc ACCEPTED_RISK đã duyệt |
+| **Review verdict** | Kết quả review gần nhất |
+| **Next action** | Bước tiếp theo orchestrator sẽ làm |
+| **Blockers** | Điều đang chặn (cần input từ bạn) |
+| **Skipped phases** | Phase bị bỏ (short-circuit) |
+
+---
+
+## Khi nào dùng pipeline nào?
+
+| Tình huống | Pipeline | Ghi chú |
+|------------|----------|---------|
+| Ý tưởng feature mơ hồ → spec → design → code → docs | **FullFeature** | Entry point mặc định cho feature mới |
+| Ticket cần AC chuẩn, chưa cần arch | **RequirementsOnly** | Output: Requirements Spec |
+| Đã có spec, cần thiết kế kỹ thuật | **ArchitectureOnly** | Đính kèm Requirements Spec |
+| Review PR trước merge | **CodeReviewOnly** | Gọi trực tiếp `review-agent` hoặc qua orchestrator |
+| Runbook sau sự cố | **DocsOnly** | writer → ADV → review |
+| Refactor lớn | **FullFeature** | Có thể **dừng sau Architecture PASS** rồi implement |
+| Bug nhỏ, fix một dòng | **Không pipeline** | Main agent hoặc agent đơn lẻ |
+
+---
+
+## Ví dụ use case + prompt mẫu
+
+Các prompt dưới đây trộn tiếng Việt (mô tả nghiệp vụ) với keyword tiếng Anh (tên agent/pipeline). Copy và chỉnh cho project của bạn.
+
+### 1. Feature mới từ ý tưởng mơ hồ → FullFeature
+
+```text
+Dùng orchestrator, pipeline FullFeature.
+
+Brief: Cần thêm tính năng export báo cáo PDF cho module đơn hàng.
+User là kế toán, cần xuất theo khoảng ngày và filter theo trạng thái thanh toán.
+Chưa rõ format PDF hay giới hạn số dòng.
+
+Bắt đầu từ requirement-analyzer. Emit Pipeline Status sau mỗi bước.
+```
+
+### 2. Ticket cần AC chuẩn → RequirementsOnly
+
+```text
+Dùng orchestrator, pipeline RequirementsOnly.
+
+Input ticket JIRA-4521:
+"API login chậm khi traffic cao, cần cải thiện."
+
+Chuẩn hóa thành Requirements Spec có AC testable.
+Không cần architecture hay code trong pipeline này.
+```
+
+### 3. Đã có spec, cần architecture → ArchitectureOnly
+
+```text
+Dùng orchestrator, pipeline ArchitectureOnly.
+
+Requirements Spec (đã duyệt):
+<paste Requirements Spec>
+
+Thiết kế Architecture Decision: components, data flow, trade-offs, phases triển khai.
+```
+
+### 4. Review PR trước merge → CodeReviewOnly
+
+```text
+Dùng orchestrator, pipeline CodeReviewOnly.
+
+Review diff branch feature/export-pdf so với main.
+Tập trung: security, error handling, test coverage, breaking changes.
+Trả Review Report với verdict PASS / PASS_WITH_NOTES / FAIL.
+```
+
+Hoặc gọi trực tiếp:
+
+```text
+@review-agent Review git diff uncommitted changes.
+Artifact type: Code. Adversarial đã skip (trivial PR).
+```
+
+### 5. Runbook sau sự cố → DocsOnly
+
+```text
+Dùng orchestrator, pipeline DocsOnly.
+
+Nguồn: post-mortem sự cố DB connection pool exhausted ngày 2026-07-01.
+Deliverable: Runbook vận hành — khi nào dùng, preconditions, procedure, rollback, escalation.
+Match style docs hiện có trong repo.
+```
+
+### 6. Refactor lớn → FullFeature (dừng sau Architecture)
+
+```text
+Dùng orchestrator, pipeline FullFeature.
+
+Brief: Tách monolith payment service thành microservice riêng.
+Scope lớn — chạy đủ REQ và ARCH phases.
+
+Sau khi Architecture Decision PASS, DỪNG pipeline.
+Tôi sẽ implement thủ công rồi gọi lại CodeReviewOnly sau.
+```
+
+### 7. Bug nhỏ → không pipeline
+
+```text
+Fix null pointer trong OrderService.getTotal() khi cart rỗng.
+One-line guard clause — không cần orchestrator hay adversarial.
+```
+
+---
+
+## Anti-patterns (tránh)
+
+| Anti-pattern | Vì sao sai | Cách đúng |
+|--------------|------------|-----------|
+| Gọi `architecture-agent` khi requirements chưa rõ | Thiết kế không traceable; scope trôi | `RequirementsOnly` hoặc FullFeature phase REQ trước |
+| Skip adversarial trên feature lớn mà không hỏi | Bỏ lỡ giả định ẩn, rủi ro | Chỉ skip khi trivial hoặc bạn nói rõ `"skip adversarial"` |
+| Gọi `review-agent` trước self-revision | Review thiếu câu trả lời BLOCKING | Luôn: ADV → Self-Revision → review |
+| Kỳ vọng `orchestrator` viết code | Orchestrator chỉ điều phối | Implementation: main agent / bạn; code review: `review-agent` |
+| Không paste full artifact khi delegate | Subagent không nhớ context cũ | Luôn đính kèm artifact đầy đủ + pipeline name + phase |
+| Retry quá 2 lần im lặng | Lãng phí token, không giải quyết gốc | Sau 2 FAIL → escalate, quyết định với user |
+
+---
+
+## Cheat sheet — prompt copy nhanh
+
+### Bắt đầu pipeline
+
+```text
+Dùng orchestrator, pipeline [FullFeature|RequirementsOnly|ArchitectureOnly|CodeReviewOnly|DocsOnly].
+Brief: <mô tả ngắn>
+Emit Pipeline Status mỗi response.
+```
+
+### Chỉ cần requirements
+
+```text
+orchestrator + RequirementsOnly + brief: <ticket/ý tưởng>
+```
+
+### Chỉ cần architecture (đã có spec)
+
+```text
+orchestrator + ArchitectureOnly
+Requirements Spec: <paste>
+```
+
+### Review PR nhanh
+
+```text
+orchestrator + CodeReviewOnly
+Review diff: <branch hoặc uncommitted>
+```
+
+### Viết tài liệu
+
+```text
+orchestrator + DocsOnly
+Loại doc: [ADR|setup guide|runbook|PR summary]
+Nguồn: <spec/design/notes>
+```
+
+### Dừng sau architecture
+
+```text
+FullFeature — dừng sau Architecture PASS, không implement trong pipeline này.
+```
+
+### Skip adversarial (chỉ khi chủ động)
+
+```text
+skip adversarial — task trivial: <mô tả>
+Ghi Skipped phases trong Pipeline Status.
+```
+
+### Escalate khi bị block
+
+```text
+Pipeline đang block vì BLOCKING question #2.
+Tôi chọn: [trả lời / ACCEPTED_RISK với lý do: ...]
+Tiếp tục pipeline.
+```
+
+---
+
+## Gọi agent đơn lẻ (không qua orchestrator)
+
+Hợp lệ khi scope nhỏ và rõ:
+
+| Agent | Khi gọi trực tiếp |
+|-------|-------------------|
+| `requirement-analyzer` | Brief đơn giản, không cần ADV/review |
+| `architecture-agent` | Đã có spec, một câu hỏi thiết kế cụ thể |
+| `adversarial-critic` | Muốn challenge artifact có sẵn (không formal review) |
+| `review-agent` | Review diff/PR (`CodeReviewOnly`) |
+| `writer-agent` | Draft doc nhanh, không cần full DocsOnly pipeline |
+
+> Với feature/refactor **không trivial**, vẫn nên qua `orchestrator` để gates và retry được enforce.
+
+---
+
+## Checklist trước khi merge / ship
+
+- [ ] Đúng pipeline cho scope task
+- [ ] Mọi artifact có `## Adversarial Self-Revision` (nếu đã chạy ADV)
+- [ ] Không còn BLOCKING mở (hoặc ACCEPTED_RISK đã duyệt)
+- [ ] `review-agent` verdict: PASS hoặc PASS_WITH_NOTES
+- [ ] Pipeline Status ghi rõ phase skipped (nếu có)
+- [ ] Deliverables: spec / arch / code review / docs — liệt kê rõ cho team
+
+---
+
+## Tài liệu liên quan
+
+| File | Nội dung |
+|------|----------|
+| [README.md](./README.md) | Cài đặt, symlink, troubleshooting |
+| `agents/orchestrator.md` | Định nghĩa pipeline, gates, delegation |
+| `agents/requirement-analyzer.md` | Template Requirements Spec |
+| `agents/architecture-agent.md` | Template Architecture Decision |
+| `agents/adversarial-critic.md` | Tier câu hỏi BLOCKING / IMPORTANT / EXPLORATORY |
+| `agents/review-agent.md` | Checklist và verdict rules |
+| `agents/writer-agent.md` | Template ADR, guide, runbook, PR body |
+
+---
+
+## Adversarial Self-Revision
+
+<!-- Meta-doc: không qua adversarial-critic trong pipeline tạo file này. Placeholder cho tích hợp pipeline. -->
+
+| Question ID | Response type | Response | Doc change |
+|-------------|---------------|----------|------------|
+| N/A | N/A | Tài liệu hướng dẫn meta — không có vòng ADV formal | Không áp dụng |

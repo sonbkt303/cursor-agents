@@ -2,6 +2,8 @@
 
 Personal Cursor subagents synced across machines and projects via `~/.cursor/agents`.
 
+**Usage guide:** [USAGE.md](./USAGE.md) — cách phối hợp agents, pipeline, prompt mẫu, và cheat sheet.
+
 ## Agents
 
 | Agent | Role |
