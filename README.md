@@ -13,7 +13,15 @@ Personal Cursor subagents synced across machines and projects via `~/.cursor/age
 | `architecture-agent` | Technical design and trade-offs |
 | `adversarial-critic` | Devil's advocate / Socratic challenger |
 | `review-agent` | Formal PASS / FAIL review |
-| `writer-agent` | ADRs, guides, runbooks, PR summaries |
+| `writer-agent` | Module overviews, specs, ADRs, guides, runbooks, PR summaries |
+
+## Documentation style
+
+Default markdown style for `writer-agent` (and the docs checklist in `review-agent`) lives in [`templates/documentation-style.md`](./templates/documentation-style.md).
+
+- Applies across **all projects** on a machine after setup (user-level agents).
+- If a target repo has stronger local conventions (`docs/DOCUMENTATION-STYLE.md` or existing module docs), those win.
+- Update style → edit `templates/` + `agents/writer-agent.md` → commit/push → `git pull` on other machines.
 
 ## Quick setup
 

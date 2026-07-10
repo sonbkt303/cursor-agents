@@ -3,6 +3,8 @@
 Tài liệu này hướng dẫn cách **phối hợp 6 subagent** trong Cursor để xử lý yêu cầu IT có chất lượng, có kiểm soát rủi ro, và có thể truy vết.
 
 > **Chưa cài đặt?** Xem [README.md](./README.md) để clone repo, chạy `setup.sh` / `setup.ps1`, và symlink `~/.cursor/agents` → `agents/`. Sau khi setup, các agent áp dụng cho **mọi project** trên máy đó.
+>
+> **Documentation style:** `writer-agent` mặc định theo [templates/documentation-style.md](./templates/documentation-style.md) (overview/spec, metadata table, key points, admonitions, Mermaid). Repo đích có convention mạnh hơn thì ưu tiên local.
 
 ---
 
@@ -104,7 +106,7 @@ orchestrator ──► delegate ──► requirement-analyzer | architecture-ag
 | `architecture-agent` | Thiết kế kỹ thuật từ spec đã duyệt | Thay đổi scope; viết full code |
 | `adversarial-critic` | Devil's advocate, câu hỏi Socratic | Sửa artifact; chấm PASS/FAIL |
 | `review-agent` | Review chính thức: PASS / PASS_WITH_NOTES / FAIL | Thiết kế lại; hỏi Socratic mở |
-| `writer-agent` | ADR, guide, runbook, PR summary | Thay đổi quyết định kỹ thuật |
+| `writer-agent` | Overview, spec, ADR, guide, runbook, PR summary | Thay đổi quyết định kỹ thuật |
 
 ### Input / Output (hợp đồng giữa các agent)
 
@@ -114,7 +116,7 @@ orchestrator ──► delegate ──► requirement-analyzer | architecture-ag
 | `architecture-agent` | Requirements Spec đã duyệt | Architecture Decision |
 | `adversarial-critic` | Artifact từ producer | Adversarial Challenge Report |
 | `review-agent` | Artifact sau self-revision | Review Report |
-| `writer-agent` | Spec, design, hoặc ghi chú implementation | Tài liệu (ADR, guide, runbook, PR body) |
+| `writer-agent` | Spec, design, hoặc ghi chú implementation | Tài liệu (overview, spec, ADR, guide, runbook, PR body) |
 
 ---
 
@@ -401,7 +403,7 @@ Dùng orchestrator, pipeline DocsOnly.
 
 Nguồn: ghi chú setup môi trường staging mới.
 Deliverable: Setup guide — prerequisites, steps, verification, troubleshooting.
-Match style docs hiện có trong repo.
+Style: follow cursor-agents `templates/documentation-style.md` unless the target repo has stronger local doc conventions.
 ```
 
 ### 6. Sự cố production → IncidentToRunbook
@@ -580,12 +582,13 @@ Hợp lệ khi scope nhỏ và rõ:
 | File | Nội dung |
 |------|----------|
 | [README.md](./README.md) | Cài đặt, symlink, troubleshooting |
+| [templates/documentation-style.md](./templates/documentation-style.md) | Markdown style mặc định cho writer-agent (overview/spec, callouts, Mermaid) |
 | `agents/orchestrator.md` | Định nghĩa pipeline, gates, delegation |
 | `agents/requirement-analyzer.md` | Template Requirements Spec |
 | `agents/architecture-agent.md` | Template Architecture Decision |
 | `agents/adversarial-critic.md` | Tier câu hỏi BLOCKING / IMPORTANT / EXPLORATORY |
 | `agents/review-agent.md` | Checklist và verdict rules |
-| `agents/writer-agent.md` | Template ADR, guide, runbook, PR body |
+| `agents/writer-agent.md` | Template overview, spec, ADR, guide, runbook, PR body |
 
 ---
 

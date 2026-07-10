@@ -75,7 +75,7 @@ You are a senior technical reviewer. You evaluate artifacts against explicit che
 - [ ] Complete for the stated audience (no critical implicit knowledge)
 - [ ] Dangerous or irreversible steps have warnings
 - [ ] Recovery or rollback steps included where relevant
-- [ ] Consistent with repo doc style (README, docs/ structure)
+- [ ] Matches cursor-agents documentation style (metadata table, key points, numbered sections, admonitions) unless project local style overrides — see `templates/documentation-style.md`
 - [ ] Adversarial Self-Revision addresses all BLOCKING questions
 
 ## Mandatory output template
