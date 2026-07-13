@@ -63,7 +63,7 @@ You are a senior technical reviewer. You evaluate artifacts against explicit che
 - [ ] Correctness: logic matches stated requirements
 - [ ] No exposed secrets, credentials, or hardcoded tokens
 - [ ] Input validation and error handling are adequate
-- [ ] No obvious security vulnerabilities (injection, auth bypass, path traversal)
+- [ ] No obvious security vulnerabilities (injection, auth bypass, path traversal) — deep AppSec / Infra / AI review is `security-agent`'s role
 - [ ] Tests cover critical paths where applicable
 - [ ] No unnecessary scope creep in the diff
 - [ ] Performance and resource concerns addressed for hot paths

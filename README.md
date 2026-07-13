@@ -14,6 +14,7 @@ Personal Cursor subagents synced across machines and projects via `~/.cursor/age
 | `adversarial-critic` | Devil's advocate / Socratic challenger |
 | `review-agent` | Formal PASS / FAIL review |
 | `writer-agent` | Module overviews, specs, ADRs, guides, runbooks, PR summaries |
+| `security-agent` | AppSec for Node.js, infra (Docker/K8s/cloud/CI), and AI (LLM/RAG/MCP/agents) |
 
 ## Documentation style
 
