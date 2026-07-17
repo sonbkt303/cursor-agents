@@ -1,6 +1,6 @@
 # cursor-agents
 
-Personal Cursor subagents synced across machines and projects via `~/.cursor/agents`.
+Personal Cursor **subagents** and **skills** synced across machines and projects via `~/.cursor/agents` and `~/.cursor/skills`.
 
 **Usage guide:** [USAGE.md](./USAGE.md) — Quick path cho task hàng ngày, pipeline, prompt mẫu, cheat sheet.
 
@@ -15,6 +15,17 @@ Personal Cursor subagents synced across machines and projects via `~/.cursor/age
 | `review-agent` | Formal PASS / FAIL review |
 | `writer-agent` | Module overviews, specs, ADRs, guides, runbooks, PR summaries |
 | `security-agent` | AppSec for Node.js, infra (Docker/K8s/cloud/CI), and AI (LLM/RAG/MCP/agents) |
+
+## Skills
+
+| Skill | Role |
+|-------|------|
+| `appsec-research-orchestrator` | AppSec KB research pipeline (Mr P — Professional); batch, interactive, qa-only, single-role |
+| `kb-write-topic` | Write one Knowledge Base topic quickly without multi-role pipeline |
+
+User guide (Vietnamese): [`skills/appsec-research-orchestrator/references/pipeline/USER-GUIDE.md`](./skills/appsec-research-orchestrator/references/pipeline/USER-GUIDE.md)
+
+Invoke: `@appsec-research-orchestrator` or first line `Use appsec-research-orchestrator (Mr P — Professional).`
 
 ## Documentation style
 
@@ -44,7 +55,7 @@ cd cursor-agents
 .\scripts\setup.ps1
 ```
 
-The script links `~/.cursor/agents` → `agents/` in this repo. Existing agents are backed up automatically.
+The script links `~/.cursor/agents` → `agents/` and each skill in `skills/` → `~/.cursor/skills/<skill-name>`. Existing paths are backed up automatically.
 
 ### Another machine
 
@@ -61,21 +72,22 @@ git pull
 # No re-run needed — symlink already points to repo
 ```
 
-Restart Cursor if new agents do not appear immediately.
+Restart Cursor if new agents or skills do not appear immediately.
 
 ## How it works
 
 ```
-~/.cursor/agents  ──symlink──>  cursor-agents/agents/*.md
-                                      │
-                                      └── git push/pull syncs across machines
+~/.cursor/agents              ──symlink──>  cursor-agents/agents/*.md
+~/.cursor/skills/<skill-name> ──symlink──>  cursor-agents/skills/<skill-name>/
+                                                    │
+                                                    └── git push/pull syncs across machines
 ```
 
-User-level agents apply to **all projects** on that machine. Project-level agents in `.cursor/agents/` inside a repo take priority over these.
+User-level agents and skills apply to **all projects** on that machine. Project-level copies in `.cursor/agents/` or `.cursor/skills/` inside a repo take priority over user-level.
 
-## Updating agents
+## Updating agents and skills
 
-1. Edit files in `agents/`
+1. Edit files in `agents/` or `skills/`
 2. Commit and push
 3. `git pull` on other machines
 
@@ -89,10 +101,12 @@ To share agents with a team inside one repo, copy files to that repo's `.cursor/
 |-------|-----|
 | Symlink fails on Windows | Run PowerShell as Administrator, or enable **Developer Mode** (Settings → System → For developers) |
 | Agents not visible | Restart Cursor / Reload Window |
+| Skills not visible | Restart Cursor / Reload Window; check `ls -la ~/.cursor/skills/appsec-research-orchestrator` |
 | Wrong agents loaded | Check `ls -la ~/.cursor/agents` points to this repo |
+| Wrong skills loaded | Check each skill symlink under `~/.cursor/skills/` points to this repo |
 
-Custom target path:
+Custom target paths:
 
 ```bash
-CURSOR_AGENTS_DIR=/path/to/.cursor/agents ./scripts/setup.sh
+CURSOR_AGENTS_DIR=/path/to/.cursor/agents CURSOR_SKILLS_DIR=/path/to/.cursor/skills ./scripts/setup.sh
 ```
