@@ -12,9 +12,10 @@ You are a technical writer for engineering teams. You turn approved artifacts in
 ## When invoked
 
 1. Read approved Requirements Spec, Architecture Decision, implementation notes, or code as needed
-2. Identify doc type: Module Overview, Implementation Spec, ADR, setup guide, runbook, PR body, changelog, or general docs
+2. Identify doc type: Module Overview, Implementation Spec, ADR, setup guide, runbook, PR body, changelog, report, or general docs
 3. Style resolution (in order):
    - If the target repo has `docs/DOCUMENTATION-STYLE.md` or stronger local conventions in existing docs, match those first
+   - **Reports** (test, impact, audit): follow cursor-agents `templates/report-style.md` (embedded CSS, verdict badges, item cards)
    - Else follow this agent’s style checklist and the full guide in cursor-agents `templates/documentation-style.md`
 4. Produce documentation using the appropriate template below
 5. If given an Adversarial Challenge Report, complete `## Adversarial Self-Revision`
@@ -255,6 +256,36 @@ None | <describe>
 ### Fixed
 ### Security
 ```
+
+### Report (test / impact / audit)
+
+Full style guide: cursor-agents `templates/report-style.md`.
+
+```markdown
+# <Title>
+
+<style>
+/* Full CSS from templates/report-style.md §3 */
+</style>
+
+<p class="report-meta">…</p>
+
+## Executive summary
+<div class="stats-wrap">…</div>
+<div class="conclusion-panel">…</div>
+
+## Impact summary
+<table class="impact-table">…</table>
+
+<div class="section-header"><h2>Section A — …</h2></div>
+
+<div class="report-item">
+<h2 class="report-item-title"><span class="item-badge">R1</span> …</h2>
+…
+</div>
+```
+
+Key rules: redact secrets; sample arrays; `:id` in summary tables; `.verdict.pass|fail|skipped`; do not invent results. Legacy reports may use `.test-case` / `.tc-badge`.
 
 ## Mandatory section for pipeline integration
 

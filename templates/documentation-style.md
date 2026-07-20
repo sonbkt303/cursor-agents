@@ -17,6 +17,9 @@ Golden patterns originated from CleverDent booking-intake overview/spec docs —
 | **Runbook** | Operate / recover / escalate | On-call / ops |
 | **PR summary** | Pull request body | Reviewers |
 | **Changelog** | Release notes | Consumers of the change |
+| **Report** | Test, impact, audit reports with summary matrix + item sections | QA, tech leads, reviewers |
+
+For **structured reports** (test runs, impact assessment, audits), use [`report-style.md`](./report-style.md) — embedded CSS + HTML cards, not GitHub admonitions.
 
 ### Overview vs Spec
 

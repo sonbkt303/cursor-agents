@@ -29,10 +29,15 @@ Invoke: `@appsec-research-orchestrator` or first line `Use appsec-research-orche
 
 ## Documentation style
 
-Default markdown style for `writer-agent` (and the docs checklist in `review-agent`) lives in [`templates/documentation-style.md`](./templates/documentation-style.md).
+Default markdown styles for `writer-agent` (and the docs checklist in `review-agent`):
+
+| Template | Use for |
+|----------|---------|
+| [`templates/documentation-style.md`](./templates/documentation-style.md) | Overviews, specs, ADRs, setup guides, runbooks, PR summaries |
+| [`templates/report-style.md`](./templates/report-style.md) | Test, impact, and audit reports (embedded CSS, verdict badges, item cards) |
 
 - Applies across **all projects** on a machine after setup (user-level agents).
-- If a target repo has stronger local conventions (`docs/DOCUMENTATION-STYLE.md` or existing module docs), those win.
+- If a target repo has stronger local conventions (`docs/DOCUMENTATION-STYLE.md`, `docs/REPORT-STYLE.md`, or existing docs), those win.
 - Update style → edit `templates/` + `agents/writer-agent.md` → commit/push → `git pull` on other machines.
 
 ## Quick setup
