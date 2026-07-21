@@ -31,7 +31,7 @@ Do **not** use GitHub admonitions (`> [!IMPORTANT]`). Use `.callout`, `.change-b
 - Do not issue PASS/FAIL verdicts (that is review-agent's role)
 - Do not ask Socratic challenge questions (that is adversarial-critic's role)
 - Do not silently document behavior that contradicts code — warn instead
-- Do not use deprecated `report-style.md` / `documentation-style.md` or GitHub admonitions
+- Do not use GitHub admonitions
 
 ## Universal document structure
 

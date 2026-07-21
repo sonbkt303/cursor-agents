@@ -663,8 +663,6 @@ Hợp lệ khi scope nhỏ và rõ:
 |------|----------|
 | [README.md](./README.md) | Cài đặt, symlink, troubleshooting |
 | [templates/document-style.md](./templates/document-style.md) | Document template duy nhất cho writer-agent (CSS, diagram panels, Mermaid, item cards) |
-| [templates/report-style.md](./templates/report-style.md) | Deprecated — redirect tới document-style.md |
-| [templates/documentation-style.md](./templates/documentation-style.md) | Deprecated — redirect tới document-style.md |
 | `agents/orchestrator.md` | Định nghĩa pipeline, gates, delegation |
 | `agents/requirement-analyzer.md` | Template Requirements Spec |
 | `agents/architecture-agent.md` | Template Architecture Decision |

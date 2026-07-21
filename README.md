@@ -35,8 +35,6 @@ Invoke: `@appsec-research-orchestrator` or first line `Use appsec-research-orche
 |----------|---------|
 | [`templates/document-style.md`](./templates/document-style.md) | All writer-agent output — embedded CSS, diagram panels, section headers, item cards, Mermaid patterns |
 
-[`templates/report-style.md`](./templates/report-style.md) and [`templates/documentation-style.md`](./templates/documentation-style.md) are **deprecated** — redirect to `document-style.md`.
-
 - Applies across **all projects** on a machine after setup (user-level agents).
 - If a target repo has stronger local conventions (`docs/DOCUMENT-STYLE.md`, `docs/REPORT-STYLE.md`, or existing styled report), those win.
 - Update style → edit `templates/document-style.md` + `agents/writer-agent.md` → commit/push → `git pull` on other machines.

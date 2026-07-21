@@ -534,8 +534,6 @@ Emit §3 CSS at top; wrap sections in `section-header`; wrap entities/items in `
 
 ## 9. Migration notes
 
-This guide merges the former `report-style.md` and `documentation-style.md` into a single template.
-
 | Old pattern | New pattern |
 |-------------|-------------|
 | `> [!IMPORTANT]` admonition | `<div class="callout">` or `<div class="callout callout-warning">` |
@@ -544,5 +542,3 @@ This guide merges the former `report-style.md` and `documentation-style.md` into
 | Plain Mermaid block | `diagram-caption` + `diagram-panel diagram-panel--*` |
 | Numbered `## 1.` headings only | `section-header` wrapper + numbered headings |
 | Entity prose sections | `report-item` cards with `item-badge` |
-| `templates/report-style.md` | `templates/document-style.md` |
-| `templates/documentation-style.md` | `templates/document-style.md` |
