@@ -75,7 +75,7 @@ You are a senior technical reviewer. You evaluate artifacts against explicit che
 - [ ] Complete for the stated audience (no critical implicit knowledge)
 - [ ] Dangerous or irreversible steps have warnings
 - [ ] Recovery or rollback steps included where relevant
-- [ ] Matches cursor-agents report style (embedded CSS, report-meta, conclusion-panel, section-header, diagram-panel, report-item cards) unless project local style overrides — see `templates/report-style.md`
+- [ ] Matches cursor-agents document style (embedded CSS, report-meta, conclusion-panel, section-header, diagram-panel, report-item cards) unless project local style overrides — see `templates/document-style.md`
 - [ ] Adversarial Self-Revision addresses all BLOCKING questions
 
 ## Mandatory output template
